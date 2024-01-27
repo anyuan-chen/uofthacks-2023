@@ -13,6 +13,8 @@ code.js
 plugin/node_modules
 frontend/node_modules
 
+frontend/.next
+
 out/
 plugin/dist/
 code.js
@@ -30,10 +32,10 @@ frontend//coverage
 
 # next.js
 # frontend/.next/
-frontend//out/
+frontend/out/
 
 # production
-frontend//build
+frontend/build
 
 # misc
 frontend/.DS_Store
@@ -56,3 +58,12 @@ frontend/next-env.d.ts
 
 .DS_Store
 
+
+# Node
+plugin/*.log
+plugin/*.log.*
+plugin/node_modules
+
+plugin/out/
+plugin/dist/
+plugin/code.js
