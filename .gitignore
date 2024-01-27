@@ -67,3 +67,5 @@ plugin/node_modules
 plugin/out/
 plugin/dist/
 plugin/code.js
+plugin/env.ts
+

@@ -1,5 +1,6 @@
 import { imports } from "./code";
 import { getFrameInfo, getTextInfo } from "./infoExtraction";
+import { FrameInfo, TextInfo } from "./types";
 
 function RGBAToHSLA(r: number, g: number, b: number, a: number) {
   let cmin = Math.min(r, g, b),
@@ -52,20 +53,18 @@ export function addUseStateToImports(
 
 export { RGBAToHSLA };
 
-function parseTextInfoIntoEnglish(node: TextNode) {
-  const data = getTextInfo(node);
+function parseTextInfoIntoEnglish(data: TextInfo) {
   return `The font weight of this text is ${data.fontWeight}, the font size of this text is ${data.fontSize}, the height of this text is ${data.height}, the width of this text is ${data.width}, the relative font size is ${data.relativeFontSizeRank}, the font color of this is ${data.fontColor}, the content of the text is ${data.text}.`;
 }
 
 export { parseTextInfoIntoEnglish };
 
-function parseFrameInfoIntoEnglish(node: FrameNode): string {
-  const data = getFrameInfo(node);
+function parseFrameInfoIntoEnglish(data: FrameInfo): string {
   let output = `The name of this frame is ${data.name}, the height of this frame is ${data.height}, the width of this frame is ${data.width}, the fill of this frame is ${data.fills}`;
   output += data.borderFill? `the frame has an outline. ` : "this frame does not have an outline. " 
-  for (const child of node.children) {
-    if (child.type === 'TEXT') {
-      output += parseTextInfoIntoEnglish(child);
+  for (const child of data.childrenPadding) {
+    if ("text" in child.node) {
+      output += parseTextInfoIntoEnglish(child.node);
     }
   }
   return output;

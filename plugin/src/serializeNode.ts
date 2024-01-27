@@ -6,6 +6,7 @@ import {
   getTextClassname,
   getVariantForButton,
 } from "./classNames";
+import { classify } from "./cohere";
 import { getFrameInfo, getTextInfo } from "./infoExtraction";
 import { traverse } from "./traversal";
 import {
@@ -34,17 +35,18 @@ async function serializeBasicNode(
   throw "";
 }
 
+type PaddingInfo = {
+  leftPadding: number;
+  rightPadding: number;
+  topPadding: number;
+  bottomPadding: number;
+}
 
 type FrameSpaceInfo = {
   // node: SceneNode;
   height: number;
   width: number;
-  padding: {
-    leftPadding: number;
-    rightPadding: number;
-    topPadding: number;
-    bottomPadding: number;
-  }
+  padding: PaddingInfo,
   html: string;
 };
 
@@ -57,7 +59,7 @@ function getVerticalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
 
 
 function getHorizontalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
-  if (node2.padding.leftPadding > node2.padding.leftPadding) {
+  if (node2.padding.leftPadding > node1.padding.leftPadding) {
     return node2.padding.leftPadding - node1.padding.leftPadding - node1.width;
   }
   return  node1.padding.leftPadding - node2.padding.leftPadding - node2.width;
@@ -70,8 +72,18 @@ function getSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo, direction: str
 
 // x is first value, y is second value, tolerance is percentage (0 to 1) representing how much difference can be between x and y
 // might need to fix
-function withinAcceptibleRange(x:number, y: number, tolerance:number) {
-  return Math.abs(Math.abs(x - y) / x - 1) <= tolerance;
+function isSimilarSpacing(x:number, y: number, parentLength:number,tolerance:number) {
+  return Math.abs(x - y) / parentLength < tolerance;
+}
+
+// "get the closets padding to the parent div"
+function getMinPadding(padding1: PaddingInfo, padding2: PaddingInfo) {
+  return {
+    leftPadding: Math.min(padding1.leftPadding, padding2.leftPadding),
+    rightPadding: Math.min(padding1.rightPadding, padding2.rightPadding),
+    topPadding: Math.min(padding1.topPadding, padding2.topPadding),
+    bottomPadding: Math.min(padding1.bottomPadding, padding2.bottomPadding)
+  }
 }
 
 // assumes children is sorted 
@@ -88,10 +100,7 @@ function mergeChildren(children: FrameSpaceInfo[], direction: string) {
   const gapSize = getSpacing(node1, node2, direction);
   let newPadding = node1.padding;
 
-  newPadding.leftPadding = Math.min(newPadding.leftPadding, node2.padding.leftPadding);
-  newPadding.topPadding = Math.min(newPadding.topPadding, node2.padding.topPadding);
-  newPadding.rightPadding = Math.min(newPadding.rightPadding, node2.padding.rightPadding);
-  newPadding.bottomPadding = Math.min(newPadding.bottomPadding, node2.padding.bottomPadding);
+  newPadding = getMinPadding(newPadding, children[1].padding);
   
   let newWidth = node1.width + node2.width;
   let newHeight = node1.height + node2.height;
@@ -117,7 +126,7 @@ function mergeChildren(children: FrameSpaceInfo[], direction: string) {
   return mergeChildren([...newChildren], direction);
 }
 
-function groupLayout(children: FrameSpaceInfo[], direction:string) {
+function groupLayout(node: FrameNode | TextNode, children: FrameSpaceInfo[], direction:string) {
     // make ordering to traverse and group first
   if (children.length === 0) { // if empty
     return ""
@@ -134,37 +143,77 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
     const spacingInPx = getSpacing(children[i-1], children[i], direction);      
     spacingSizes.push({
       spacingInPx, 
-      index: i
+      pairEndIndex: i // end 
     });
   }
 
   spacingSizes.sort((s1, s2) => {
+    if (s1.spacingInPx === s2.spacingInPx) {
+      return s1.pairEndIndex - s2.pairEndIndex;
+    }
     return s1.spacingInPx - s2.spacingInPx;
   }); // sort the sizes
 
-  console.log("my spacing sizes " , children, spacingSizes)
+  // console.log("my spacing sizes " , children, direction, spacingSizes); // debug
 
-  let groupRanges = [];
-  let previousRangeEnd = -1;
+  let groupRanges = []; // stores {l, r} pairs, l representing left most index, and r representing right most
+                        // ranges are inclusive
+  const parentLength = direction === "flex-row"? node.width : node.height;
+
   for (const spacingSize of spacingSizes) {
-    if (visitedSpacingIndexes.has(spacingSize.index)) continue;
+
+    let rangeStartIndex = spacingSize.pairEndIndex - 1;
+    let rangeLastIndex = spacingSize.pairEndIndex;
     let previousSpacing = spacingSize.spacingInPx;
-    let lst = spacingSize.index; // last index that is within this segment
-    for (let i = spacingSize.index; i < children.length; i++) {
-      const currentSpacing = getSpacing(children[i-1], children[i], direction);
-      if (withinAcceptibleRange(previousSpacing, currentSpacing, 0.1)) {
-        visitedSpacingIndexes.set(i, true);
-        lst = i;
-      } else {
+
+    if (visitedSpacingIndexes.has(rangeLastIndex)) {
+      if (rangeStartIndex === 0 && !visitedSpacingIndexes.has(rangeStartIndex)) {
+        visitedSpacingIndexes.set(rangeStartIndex, true);
         groupRanges.push({
-          l: previousRangeEnd + 1,  // bug should start with 0, should not overlap
-          r: lst,
-          gapSize: spacingSize.spacingInPx,
+          l: rangeStartIndex,
+          r: rangeStartIndex,
+          gapSize: 0,
         });
-        previousRangeEnd = lst;
+      }
+      continue;
+    }
+
+    if (visitedSpacingIndexes.has(rangeStartIndex)) {
+      if (spacingSize.pairEndIndex === spacingSizes.length - 1) {
+        groupRanges.push({
+          l: spacingSizes.length - 1,
+          r: spacingSizes.length - 1,
+          gapSize: 0,
+        });
+        continue;
+      }
+      rangeStartIndex = spacingSize.pairEndIndex;
+      previousSpacing = getSpacing(children[rangeStartIndex - 1], children[rangeStartIndex], direction);
+    }
+    // console.log("----------------------------------------")
+    // console.log("previous spacing", previousSpacing);
+
+    for (let i = rangeStartIndex + 1; i < children.length; i++) {
+      const currentSpacing = getSpacing(children[i-1], children[i], direction);
+
+      //console.log("current spacing", currentSpacing, i-1, i);
+      if (!visitedSpacingIndexes.has(i) && isSimilarSpacing(previousSpacing, currentSpacing, parentLength, 0.1)) {
+        visitedSpacingIndexes.set(i, true);
+        rangeLastIndex = i;
+        // console.log("last segment ", rangeLastIndex)
+      } else {
         break;
       }
     }
+
+    // console.log("----------------------------------------")
+    visitedSpacingIndexes.set(rangeStartIndex, true);
+
+    groupRanges.push({
+      l: rangeStartIndex,
+      r: rangeLastIndex,
+      gapSize: spacingSize.spacingInPx,
+    });
   }
 
   // sort inc order by left index
@@ -172,8 +221,27 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
     return r1.l - r2.l;
   });
 
+  console.log("my group ranges", groupRanges);
+  // sanity check
+  for (let i = 0; i < groupRanges.length - 1; i++) {
+    if (groupRanges[i].r > groupRanges[i + 1].l) {
+      const msg = "ranges overlapping, cannot be happening";
+      console.error(msg);
+      throw msg;
+    }
+  } 
+
   let groupedChildren = [];
   for (const range of groupRanges) {
+    if (range.l == range.r) { // if only consisted of one element
+      groupedChildren.push({
+        height: children[range.l].height,
+        width: children[range.l].width,
+        padding: children[range.l].padding,
+        html: children[range.l].html,
+      });
+      continue;
+    }
     const gap_xy = direction === "flex-row"? "x" : "y";
     let html = `<div className="flex ${direction} gap-${gap_xy}-${getGapTwClassName(range.gapSize)}">`
     let newPadding = children[range.l].padding;
@@ -181,10 +249,7 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
     let newWidth = 0;
 
     for (let i = range.l; i <= range.r; i++) {
-      newPadding.leftPadding = Math.min(newPadding.leftPadding, children[i].padding.leftPadding);
-      newPadding.topPadding = Math.min(newPadding.topPadding, children[i].padding.topPadding);
-      newPadding.rightPadding = Math.min(newPadding.rightPadding, children[i].padding.rightPadding);
-      newPadding.bottomPadding = Math.min(newPadding.bottomPadding, children[i].padding.bottomPadding);
+      newPadding = getMinPadding(newPadding, children[i].padding);
       
       newWidth += children[i].width;
       newHeight += children[i].height;
@@ -205,7 +270,7 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
       html: html,
     }); 
   }
-
+  // console.log("my final grouped childrens", groupedChildren);
   return mergeChildren(groupedChildren, direction);
 }
 
@@ -266,7 +331,7 @@ async function serializeLayout(
     })
   }
 
-  const childrenHTML = groupLayout(childrenSpacing, direction);
+  const childrenHTML = groupLayout(node, childrenSpacing, direction);
 
   console.log("my children with parent node", node, childrenHTML);
 
@@ -289,14 +354,18 @@ async function serializeText(
     if (type === TextType.BODY) {
       return `<p className="${textClassName}">\${${node.name}}</p>`;
     } else if (type === TextType.HEADING) {
-      return `<h${info.relativeFontSizeRank} className="${textClassName}">\${${node.name}}</h${info.relativeFontSizeRank}>`;
+      console.log("[info]", info.relativeFontSizeRank.rank);
+      const headingRank = info.relativeFontSizeRank.rank + 1;
+      return `<h${headingRank} className="${textClassName}">\${${node.name}}</h${headingRank}>`;
     }
   }
 
   if (type === TextType.BODY) {
     return `<p className="${textClassName}">${info.text}</p>`;
   } else if (type === TextType.HEADING) {
-    return `<h${info.relativeFontSizeRank} className="${textClassName}">${info.text}</h${info.relativeFontSizeRank}>`;
+    console.log("[info]", info, info.relativeFontSizeRank.rank);
+    const headingRank = info.relativeFontSizeRank.rank + 1;
+    return `<h${headingRank} className="${textClassName}">${info.text}</h${headingRank}>`;
   }
   return "";
 }
@@ -365,11 +434,39 @@ async function serializeBasicFrame(
     makes API call to cohere 
   */
 async function classifyText(node: TextInfo): Promise<TextType> {
-  return TextType.BODY;
+  const res: any = await classify(node);
+  const prediction = res.classifications[0].prediction;
+  console.log("predict res", res);
+  switch (prediction) {
+    case "heading":
+      return TextType.HEADING
+    case "body":
+      return TextType.BODY
+    default:
+      const msg = `something went wrong, prediction was not a text type, instead was ${prediction}`;
+      console.error(msg);
+      throw msg;
+  }
 }
   
 async function classifyFrame(node: FrameInfo): Promise<BasicFrameType> {
-  return BasicFrameType.BASIC_BUTTON;
+  const res: any = await classify(node);
+  const prediction = res.classifications[0].prediction;
+  console.log("predict res", res);
+  switch (prediction) {
+    case "outline":
+      return BasicFrameType.OUTLINE_BUTTON
+    case "primary":
+      return BasicFrameType.BASIC_BUTTON
+    case "destructive":
+      return BasicFrameType.DESTRUCTIVE_BUTTON
+    case "input":
+      return BasicFrameType.FORM_FIELD
+    default:
+      const msg = `something went wrong, prediction was not a basic frame type, instead was ${prediction}`;
+      console.error(msg);
+      throw msg;
+  }
 }
 
 export { serializeBasicNode, serializeLayout };

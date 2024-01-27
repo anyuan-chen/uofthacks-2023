@@ -1,11 +1,10 @@
 
+import { FrameInfo, TextInfo } from "./types";
 import { parseFrameInfoIntoEnglish, parseTextInfoIntoEnglish } from "./util";
+import { modelID, API_KEY } from "../env";
 
-const modelID = "7d73f5ea-6154-4f14-b335-6bafbb293cfd-ft";
-const API_KEY = "ky2oBXDRar21mV4c35C0EADVRx4lBzOeQOpVIdAM";
-
-export const classify = async (node: FrameNode | TextNode) => {
-    const text = node.type === 'FRAME'? parseFrameInfoIntoEnglish(node) : parseTextInfoIntoEnglish(node);
+export const classify = async (nodeInfo: FrameInfo | TextInfo) => {
+    const text = "text" in nodeInfo? parseTextInfoIntoEnglish(nodeInfo) : parseFrameInfoIntoEnglish(nodeInfo);
     const body = {
         model: modelID,
         inputs: [text],

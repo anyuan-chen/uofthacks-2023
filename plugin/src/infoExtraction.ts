@@ -64,6 +64,7 @@ function getAllFontSizes(): number [] {
       }
       fontSizes.push(fontSize);
   }
+  
   return fontSizes;
 }
 
@@ -118,6 +119,7 @@ export function getTextInfo(node: TextNode): TextInfo {
   }
   const fontSizeLookup = new Map<number, boolean>();
   const allFontSizes = getAllFontSizes(); 
+  console.log("[allFontSizes]", allFontSizes);
   let rank = 0; // lower rank means bigger
                 // so I need to find how many fonts are bigger than me
   let total = 0;

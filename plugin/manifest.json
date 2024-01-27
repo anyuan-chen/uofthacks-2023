@@ -19,7 +19,9 @@
   ],
   "networkAccess": {
     "allowedDomains": [
-      "none"
-    ]
+      "https://api.cohere.ai/v1/classify"
+    ],
+    "reasoning": "plugin needs api to get responses",
+    "devAllowedDomains": ["https://api.cohere.ai/v1/classify"]
   }
 }
