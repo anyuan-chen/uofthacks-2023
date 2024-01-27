@@ -1,6 +1,7 @@
 import {
   determineFlexDirection,
   getBasicFrameClassname,
+  getGapTwClassName,
   getLayoutClassname,
   getTextClassname,
   getVariantForButton,
@@ -17,8 +18,7 @@ import {
 
 /*
   
-  */
-
+*/
 async function serializeBasicNode(
   node: FrameNode | TextNode,
   imports: string,
@@ -34,6 +34,132 @@ async function serializeBasicNode(
   throw "";
 }
 
+
+type FrameSpaceInfo = {
+  // node: SceneNode;
+  height: number;
+  width: number;
+  padding: {
+    leftPadding: number;
+    rightPadding: number;
+    topPadding: number;
+    bottomPadding: number;
+  }
+  html: string;
+};
+
+// assumes that node1 is the more up left node than node 2
+function getVerticalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
+  return  node2.padding.topPadding - node1.padding.topPadding - node1.height;
+}
+
+// assumes that node1 is the more further left node than node2
+function getHorizontalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
+  return  node2.padding.leftPadding - node1.padding.leftPadding - node1.width;
+
+}
+
+function getSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo, direction: string) {
+  return direction === "flex-row"? getHorizontalSpacing(node1, node2) : getVerticalSpacing(node1, node2);
+}
+
+// x is first value, y is second value, tolerance is percentage (0 to 1) representing how much difference can be between x and y
+// might need to fix
+function withinAcceptibleRange(x:number, y: number, tolerance:number) {
+  return Math.abs(Math.abs(x - y) / x - 1) <= tolerance;
+}
+
+function groupLayout(children: FrameSpaceInfo[], direction:string) {
+    // make ordering to traverse and group first
+  if (children.length === 0) { // if empty
+    return ""
+  }
+  if (children.length === 1) { // if one size left
+    return children[0].html; 
+  }
+
+  let spacingSizes = []; // store the spacing sizes, we want to group smallest ones together first 
+    // stores a pair, the spacing size and the index i (the spacing is calcualted between the i and i-1)
+  let visitedSpacingIndexes = new Map<number, boolean>();
+
+  for (let i = 1; i < children.length; i++) {
+    const spacingInPx = getSpacing(children[i-1], children[i], direction);      
+    spacingSizes.push({
+      spacingInPx, 
+      index: i
+    });
+  }
+
+  spacingSizes.sort((s1, s2) => {
+    return s1.spacingInPx - s2.spacingInPx;
+  }); // sort the sizes
+
+  let groupRanges = [];
+
+  for (const spacingSize of spacingSizes) {
+    if (visitedSpacingIndexes.has(spacingSize.index)) continue;
+    let previousSpacing = spacingSize.spacingInPx;
+    let lst = spacingSize.index; // last index that is within this segment
+    for (let i = spacingSize.index; i < children.length; i++) {
+      const currentSpacing = getSpacing(children[i-1], children[i], direction);
+      if (withinAcceptibleRange(previousSpacing, currentSpacing, 0.1)) {
+        visitedSpacingIndexes.set(i, true);
+        lst = i;
+      } else {
+        groupRanges.push({
+          l: spacingSize.index - 1, 
+          r: lst,
+          gapSize: spacingSize.spacingInPx,
+        });
+        break;
+      }
+    }
+  }
+  // sort inc order by left index
+  groupRanges.sort((r1, r2) => {
+    return r1.l - r2.l;
+  });
+
+  console.log("my group ranges", groupRanges);
+  
+  let newChildren = [];
+  for (const range of groupRanges) {
+    const gap_xy = direction === "flex-row"? "x" : "y";
+    let html = `<div className="flex ${direction} gap-${gap_xy}-${getGapTwClassName(range.gapSize)}">`
+    let newPadding = children[range.l].padding;
+    let newHeight = 0;
+    let newWidth = 0;
+
+    for (let i = range.l; i <= range.r; i++) {
+      newPadding.leftPadding = Math.min(newPadding.leftPadding, children[i].padding.leftPadding);
+      newPadding.topPadding = Math.min(newPadding.topPadding, children[i].padding.topPadding);
+      newPadding.rightPadding = Math.max(newPadding.rightPadding, children[i].padding.rightPadding);
+      newPadding.bottomPadding = Math.max(newPadding.bottomPadding, children[i].padding.bottomPadding);
+      
+      newWidth += children[i].width;
+      newHeight += children[i].height;
+      
+      if (i > range.l && direction === "flex-row") {
+        newWidth += getHorizontalSpacing(children[i-1], children[i]);
+      }
+      if (i > range.l && direction == "flex-col") {
+        newHeight += getVerticalSpacing(children[i-1], children[i]);
+      }
+
+      html += children[i].html;
+    }
+    html += "</div>"; // add closing bracket
+    newChildren.push({
+      height: newHeight,
+      width: newWidth,
+      padding: newPadding,
+      html: html,
+    }); 
+  }
+  console.log(newChildren);
+  return groupLayout([...newChildren], direction);
+}
+
 async function serializeLayout(
   node: FrameNode,
   imports: string,
@@ -44,25 +170,24 @@ async function serializeLayout(
     console.error("logic error: layouts should have children");
     throw "logic error: layouts should have children";
   }
+  type NodeWithPadding = {
+    node: FrameNode | TextNode;
+    padding: FrameChild;
+  }
   const className = getLayoutClassname(node);
   const nodeInfo = getFrameInfo(node);
   const direction = determineFlexDirection(nodeInfo);
-  //getting the html code for all of the children
-  let children: NodeWithPadding[] = [];
-  type NodeWithPadding = {
-    node: SceneNode;
-    padding: FrameChild;
-  };
+  
+  let children: NodeWithPadding[] = []; // get all the info
+ 
   for (let i = 0; i < node.children.length; i++) {
-    // console.log(
-    //   `bad height at index ${i} `,
-    //   array[i].height,
-    //   nodeInfo.childrenPadding[i].node.height
-    // );
-    children.push({
-      node: node.children[i],
-      padding: nodeInfo.childrenPadding[i],
-    });
+    const child = node.children[i];
+    if (child.type == 'TEXT' || child.type == 'FRAME') {
+      children.push({
+        node: child,
+        padding: nodeInfo.childrenPadding[i],
+      });
+    }
   }
 
   children.sort((c1, c2) => {
@@ -72,49 +197,29 @@ async function serializeLayout(
       return c1.padding.leftPadding - c2.padding.leftPadding;
     }
   });
+  
+  // getting the html code for all of the children 
+  // get the spacing info of all of the children
+  let childrenSpacing: FrameSpaceInfo[] = [];
 
-
-  // console.log(sorted);
-
-  // const childrenHTMLBlocks = await Promise.all(
-  //   sorted.map(async (childPaddingNode: NodeWithPadding) => {
-  //     const child: SceneNode = childPaddingNode.node;
-  //     if (child.type == "FRAME" || child.type == "TEXT") {
-  //       const text = await traverse(child, imports, hooks, formMap);
-  //       return text;
-  //     }
-  //     return Promise.resolve("");
-  //   })
-  // );
-
-  // console.log(childrenHTMLBlocks);
-
-  // const childrenHTML = childrenHTMLBlocks.reduce((prev, cur) => {
-  //   return prev + cur;
-  // }, "");
-
-  let childrenHTMLArr = [];
-  for (let i = 0; i < children.length; i++) {
-    const child: SceneNode = children[i].node;
-    if (child.type === "FRAME" || child.type === "TEXT") {
-      const text = await traverse(child, imports, hooks, formMap);
-      childrenHTMLArr[i] = text;
-      // console.log(sorted[i].padding, childrenHTML)
-    }
+  for (const child of children) {
+    const text = await traverse(child.node, imports, hooks, formMap);
+    childrenSpacing.push({
+      width: child.node.width,
+      height: child.node.height,
+      padding: {
+        leftPadding: child.padding.leftPadding,
+        rightPadding: child.padding.rightPadding,
+        topPadding: child.padding.topPadding,
+        bottomPadding: child.padding.bottomPadding,
+      },
+      html: text,
+    })
   }
 
-  const childrenHTML = childrenHTMLArr.reduce((prev, cur) => {
-    return prev + cur;
-  }, "");
+  const childrenHTML = groupLayout(childrenSpacing, direction);
 
-  // console.log(childrenHTML);
-
-  // console.log(
-  //   "sorted chidlren",
-  //   sorted.map((child) => {
-  //     return child.padding;
-  //   })
-  // );
+  console.log("my children with parent node", node, childrenHTML);
 
   return `<div className="${className}"> ${childrenHTML} </div>`;
 }

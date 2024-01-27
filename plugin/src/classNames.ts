@@ -37,7 +37,7 @@ export const fontWeightMapping: Record<string, string> = {
   900: "font-black",
 };
 
-export const paddingMapping = {
+export const paddingMapping: Record<string, string> = {
   0: "0",
   1: "-px",
   2: "-0.5",
@@ -75,6 +75,43 @@ export const paddingMapping = {
   384: "-96",
 };
 
+export const gapMapping: Record<string, string> = {
+  0: "-0",
+  2: "0.5",
+  4: "1",
+  6: "1.5",
+  8: "2",
+  10: "2.5",
+  12: "3",
+  14: "3.5",
+  16: "4",
+  20: "5",
+  24: "6",
+  28: "7",
+  32: "8",
+  36: "9",
+  40: "10",
+  44: "11",
+  48: "12",
+  56: "14",
+  64: "16",
+  80: "20",
+  96: "24",
+  112: "28",
+  128: "32", 
+  144: "36",
+  160: "40",
+  176: "44",
+  192: "48",
+  208: "52",
+  224: "56",
+  240: "60",
+  256: "64",
+  288: "72",
+  320: "80",
+  384: "96",
+}
+
 /*
   determines appropriate gap states for a flex-formatted UI
   eg. flex flex-col gap-y-4
@@ -86,8 +123,11 @@ export const paddingMapping = {
 export function getLayoutClassname(node: FrameNode) {
   const info = getFrameInfo(node);
   const flexDirection = determineFlexDirection(info);
-  const flexClasses = getFlexArrangement(info);
-  return `${flexDirection} ${flexClasses}`;
+  return `${flexDirection}`;
+}
+
+export function getGapTwClassName(gapSizeInPx: number) {
+  return getClosestValueToKey(gapSizeInPx, gapMapping);
 }
 
 /*
@@ -132,7 +172,7 @@ function getClosestValueToKey(x: number, mp: Record<string, string>) {
   eg. text-xl
 */
 function getFontSizeTwClass(info: TextInfo): string {
-  console.log(info.fontSize);
+ // console.log(info.fontSize);
   return getClosestValueToKey(info.fontSize, fontSizeMapping);
 }
 
@@ -213,163 +253,6 @@ function isSimilarPadding(
   parentLength: number
 ) {
   return (highest - lowest) / parentLength < 0.05;
-}
-
-/*
-  getFlexArrangement returns the flex alignment the layout works best to replicate
-*/
-function getFlexArrangement(info: FrameInfo) {
-  const direction = determineFlexDirection(info);
-  const children = info.childrenPadding.sort(
-    (c1: FrameChild, c2: FrameChild) => {
-      if (direction == "flex-col") {
-        return c1.leftPadding - c2.leftPadding;
-      } else {
-        return c1.topPadding - c2.topPadding;
-      }
-    }
-  );
-
-  //desired format of main axis spacing:
-  let mainAxisSpacing: number[] = [];
-
-  // let's break this down:
-  // we take our current distance from the boundary
-  // subtract the distance of the last element from the boundary
-  // subtract the distance of the last element itself
-  // leftover space should be between last element and this one
-  if (direction == "flex-col") {
-    mainAxisSpacing = [children[0].topPadding];
-    for (let i = 1; i < children.length; i++) {
-      mainAxisSpacing.push(
-        children[i].topPadding -
-          children[i - 1].topPadding -
-          children[i - 1].node.height
-      );
-    }
-    //distance from the last element to the bottom of the container
-    mainAxisSpacing.push(children[children.length - 1].bottomPadding);
-  } else if (direction == "flex-row") {
-    mainAxisSpacing = [children[0].leftPadding];
-    for (let i = 1; i < children.length; i++) {
-      mainAxisSpacing.push(
-        children[i].leftPadding -
-          children[i - 1].leftPadding -
-          children[i - 1].node.width
-      );
-      //distance from the last element to the right boundary
-      mainAxisSpacing.push(children[children.length - 1].rightPadding);
-    }
-  }
-
-  //can replace with ML model later if we have time
-  //goal: recognize common cases for flex containers
-  //space-between occurs when there is equal spacing between the first/last element and their parent container
-  //flex-start occurs when all of the elements are equally spaced, and the first is close to the start
-  //flex-end occurs when all the elements are equally spaced, and the first is close to the end
-
-  const main_axis_size = direction === "flex-col" ? info.height : info.width;
-  const DIVISION_THRESHOLD = 0.2;
-  const startGap = mainAxisSpacing[0];
-  const paddingDirective = getClosestValueToKey(startGap, paddingMapping);
-
-  //check if it's a flex start
-  let flexStart = true;
-  for (let i = 0; i < mainAxisSpacing.length - 1; i++) {
-    let percentageGap = mainAxisSpacing[i] / info.width;
-    if (percentageGap > DIVISION_THRESHOLD) {
-      flexStart = false;
-      break;
-    }
-  }
-  if (flexStart) {
-    const startGap = mainAxisSpacing[0];
-    const paddingDirective = getClosestValueToKey(startGap, paddingMapping);
-    if (info.childrenPadding.length === 1) {
-      return `justify-start ${
-        direction === "flex-col" ? "py" : "px"
-      }${paddingDirective}`;
-    }
-    const randomGap = mainAxisSpacing[1];
-    const gapDirective = getClosestValueToKey(randomGap, paddingMapping);
-    return `justify-start gap${gapDirective} ${
-      direction === "flex-col" ? "py" : "px"
-    }${paddingDirective}`;
-  }
-
-  //check if it's a flex-end
-  let flexEnd = true;
-  for (let i = 1; i < mainAxisSpacing.length; i++) {
-    let percentageGap = mainAxisSpacing[i] / info.width;
-    if (percentageGap > DIVISION_THRESHOLD) {
-      flexEnd = false;
-      break;
-    }
-  }
-  if (flexEnd) {
-    const startGap = mainAxisSpacing[0];
-    const paddingDirective = getClosestValueToKey(startGap, paddingMapping);
-    if (info.childrenPadding.length === 1) {
-      return `justify-end ${
-        direction === "flex-col" ? "py" : "px"
-      }${paddingDirective}`;
-    }
-    const randomGap = mainAxisSpacing[1];
-    const gapDirective = getClosestValueToKey(randomGap, paddingMapping);
-
-    if (direction === "flex-col") {
-      return `justify-end gap${gapDirective} flex-col-reverse py${paddingDirective}`;
-    } else {
-      return `justify-end gap${gapDirective} flex-row-reverse px${paddingDirective}`;
-    }
-  }
-
-  //check if it's center aligned
-  if (
-    isSimilarPadding(
-      mainAxisSpacing[0],
-      mainAxisSpacing[mainAxisSpacing.length - 1],
-      direction == "flex-col" ? info.height : info.width
-    )
-  ) {
-    const startGap = mainAxisSpacing[0];
-    const paddingDirective = getClosestValueToKey(startGap, paddingMapping);
-    if (mainAxisSpacing.length == 1) {
-      return `justify-center ${
-        direction === "flex-col" ? "py" : "px"
-      }${paddingDirective}`;
-    }
-    const randomGap = mainAxisSpacing[1];
-    const gapDirective = getClosestValueToKey(randomGap, paddingMapping);
-    return `justify-center gap${gapDirective} ${
-      direction === "flex-col" ? "py" : "px"
-    }${paddingDirective}`;
-  }
-
-  //check if it's space-between
-  let spaceBetween = true;
-  for (let i = 1; i < mainAxisSpacing.length; i++) {
-    let percentageGap = mainAxisSpacing[i] / info.width;
-    if (percentageGap > DIVISION_THRESHOLD) {
-      spaceBetween = false;
-      break;
-    }
-  }
-  if (
-    isSimilarPadding(
-      mainAxisSpacing[0],
-      mainAxisSpacing[mainAxisSpacing.length - 1],
-      main_axis_size
-    ) &&
-    spaceBetween
-  ) {
-    return `justify-center ${
-      direction === "flex-col" ? "py" : "px"
-    }${paddingDirective}`;
-  }
-
-  //default to none of these layouts
-  return `${direction === "flex-col" ? "py" : "px"}${paddingDirective}`;
 }
 
 function getBasicFramePaddingTwClass(info: FrameInfo, type: BasicFrameType) {

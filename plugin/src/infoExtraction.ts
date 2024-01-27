@@ -157,9 +157,6 @@ export function getFrameInfo(node: FrameNode): FrameInfo {
       
       const {leftPadding, rightPadding, topPadding, bottomPadding} = distanceBetweenParentChild(node, child);
       const childNode = child.type == 'FRAME'? getFrameInfo(child) : getTextInfo(child);
-      console.log("checking node and child");
-      console.log(childNode.height);
-      console.log(child.height);
       childrenPadding.push({
           id: child.id,
           node: childNode,
