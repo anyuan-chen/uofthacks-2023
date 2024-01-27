@@ -22,3 +22,5 @@ function RGBAToHSLA(r: number, g: number, b: number, a: number) {
 
   return "hsla(" + h + "," + s + "%," + l + "%," + a * 100 + "%)";
 }
+
+export default { RGBAToHSLA };
