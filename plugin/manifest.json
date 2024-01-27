@@ -1,0 +1,25 @@
+{
+  "name": "test",
+  "id": "1332208296603611388",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "capabilities": [
+    "codegen"
+  ],
+  "enableProposedApi": false,
+  "editorType": [
+    "dev"
+  ],
+  "ui": "ui.html",
+  "codegenLanguages": [
+    {
+      "label": "Language Label",
+      "value": "language-value"
+    }
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
+}

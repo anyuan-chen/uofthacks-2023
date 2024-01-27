@@ -1,8 +1,27 @@
+# Node
+*.log
+*.log.*
+node_modules
+
+out/
+dist/
+code.js
+
+# Node
+*.log
+*.log.*
+plugin/node_modules
+frontend/node_modules
+
+out/
+plugin/dist/
+code.js
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-frontend//node_modules
-frontend//.pnp
+frontend/node_modules
+frontend/.pnp
 frontend/.pnp.js
 frontend/.yarn/install-state.gz
 
