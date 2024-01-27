@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import React from "react";
 
-export default function Home() {
+const Page = () => {
   return (
     <div className="flex-col py-40">
       {" "}
@@ -23,13 +23,15 @@ export default function Home() {
       </div>
       <div className="flex-row justify-start gap-14 px0">
         {" "}
-        <Button variant="default" className="pt-6 pb-6">
+        <Button variant="default">
           Edit
         </Button>
-        <Button variant="default" className="pt-6 pb-6">
+        <Button variant="default">
           Delete
         </Button>{" "}
       </div>{" "}
     </div>
   );
-}
+};
+
+export default Page;

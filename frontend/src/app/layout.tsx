@@ -1,8 +1,33 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+export const msSans = localFont({
+  src: [
+    {
+      path: "ms_sans_serif.woff",
+      weight: "normal",
+      style: "normal",
+    },
+    {
+      path: "MS Sans Serif Bold.ttf",
+      weight: "bold",
+      style: "normal",
+    },
+  ],
+  variable: "--font-msSans",
+});
+
+export const trebuchet = localFont({
+  src: [
+    {
+      path: "trebuc.ttf",
+      weight: "bold",
+      style: "normal",
+    },
+  ],
+  variable: "--font-trebuchet",
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,7 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${trebuchet.className} ${msSans.className}`}>
+        {children}
+      </body>
     </html>
   );
 }
