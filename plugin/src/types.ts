@@ -4,7 +4,9 @@ export interface FrameInfo {
   height: number;
   width: number;
   fills: string; //background color
-
+  // for outlines
+  borderFill: string | null;
+  borderWeight: number;
   childrenPadding: FrameChild[];
 }
 

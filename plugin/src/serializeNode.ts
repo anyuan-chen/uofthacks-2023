@@ -55,32 +55,24 @@ async function serializeLayout(
   };
   for (let i = 0; i < node.children.length; i++) {
     // console.log(
-    //   "bad height",
-    //   node.children[i].height,
+    //   `bad height at index ${i} `,
+    //   array[i].height,
     //   nodeInfo.childrenPadding[i].node.height
     // );
-    const padding = nodeInfo.childrenPadding.find((child) => {
-      return child.id === node.children[i].id;
-    });
-    if (!padding) {
-      console.error(
-        "nothing found to match id for childrenPadding to node matching"
-      );
-      throw "nothing found to match id for childrenPadding to node matching";
-    }
     children.push({
       node: node.children[i],
-      padding,
+      padding: nodeInfo.childrenPadding[i],
     });
   }
 
-  const sorted = children.sort((c1, c2) => {
+  children.sort((c1, c2) => {
     if (direction == "flex-col") {
       return c1.padding.topPadding - c2.padding.topPadding;
     } else {
       return c1.padding.leftPadding - c2.padding.leftPadding;
     }
   });
+
 
   // console.log(sorted);
 
@@ -102,8 +94,8 @@ async function serializeLayout(
   // }, "");
 
   let childrenHTMLArr = [];
-  for (let i = 0; i < sorted.length; i++) {
-    const child: SceneNode = sorted[i].node;
+  for (let i = 0; i < children.length; i++) {
+    const child: SceneNode = children[i].node;
     if (child.type === "FRAME" || child.type === "TEXT") {
       const text = await traverse(child, imports, hooks, formMap);
       childrenHTMLArr[i] = text;

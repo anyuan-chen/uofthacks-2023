@@ -174,14 +174,15 @@ export function determineFlexDirection(info: FrameInfo) {
     return "flex-row";
   }
 
+
   // difference between the distance from the left boundary
-  const sortedByLeftDifference = info.childrenPadding.sort(
+  const sortedByLeftDifference = [...info.childrenPadding].sort(
     (c1: FrameChild, c2: FrameChild) => {
       return c1.leftPadding > c2.leftPadding === true ? 1 : 0;
     }
   );
   // difference bewteen the distance from the bottom boundary
-  const sortedByTopDifference = info.childrenPadding.sort(
+  const sortedByTopDifference = [...info.childrenPadding].sort(
     (c1: FrameChild, c2: FrameChild) => {
       return c1.topPadding > c2.topPadding === true ? 1 : 0;
     }

@@ -2,6 +2,7 @@
 // that appears in the Element tab of the Inspect panel.
 
 import getFormMap from "./formRecursionMapSummation";
+import { getFrameInfo } from "./infoExtraction";
 import { traverse } from "./traversal";
 import { RGBAToHSLA } from "./util";
 
@@ -103,6 +104,7 @@ figma.codegen.on("generate", async (event: CodegenEvent) => {
     return result;
   }
   figma.skipInvisibleInstanceChildren = true;
+
   const formMap = getFormMap(root);
   const program = await traverse(root, "", "", formMap);
 
