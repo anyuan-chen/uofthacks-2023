@@ -76,7 +76,7 @@ export const paddingMapping: Record<string, string> = {
 };
 
 export const gapMapping: Record<string, string> = {
-  0: "-0",
+  0: "0",
   2: "0.5",
   4: "1",
   6: "1.5",

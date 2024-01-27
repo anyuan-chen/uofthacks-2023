@@ -48,14 +48,19 @@ type FrameSpaceInfo = {
   html: string;
 };
 
-// assumes that node1 is the more up left node than node 2
 function getVerticalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
-  return  node2.padding.topPadding - node1.padding.topPadding - node1.height;
+  if (node2.padding.topPadding > node1.padding.topPadding) {
+    return node2.padding.topPadding - node1.padding.topPadding - node1.height;
+  }
+  return  node1.padding.topPadding - node2.padding.topPadding - node2.height;
 }
 
-// assumes that node1 is the more further left node than node2
+
 function getHorizontalSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo) {
-  return  node2.padding.leftPadding - node1.padding.leftPadding - node1.width;
+  if (node2.padding.leftPadding > node2.padding.leftPadding) {
+    return node2.padding.leftPadding - node1.padding.leftPadding - node1.width;
+  }
+  return  node1.padding.leftPadding - node2.padding.leftPadding - node2.width;
 
 }
 
@@ -67,6 +72,49 @@ function getSpacing(node1: FrameSpaceInfo, node2: FrameSpaceInfo, direction: str
 // might need to fix
 function withinAcceptibleRange(x:number, y: number, tolerance:number) {
   return Math.abs(Math.abs(x - y) / x - 1) <= tolerance;
+}
+
+// assumes children is sorted 
+function mergeChildren(children: FrameSpaceInfo[], direction: string) {
+  if (children.length === 0) {
+    return "";
+  }
+  if (children.length == 1) {
+    return children[0].html;
+  }
+
+  const node1 = children[0];
+  const node2 = children[1];
+  const gapSize = getSpacing(node1, node2, direction);
+  let newPadding = node1.padding;
+
+  newPadding.leftPadding = Math.min(newPadding.leftPadding, node2.padding.leftPadding);
+  newPadding.topPadding = Math.min(newPadding.topPadding, node2.padding.topPadding);
+  newPadding.rightPadding = Math.min(newPadding.rightPadding, node2.padding.rightPadding);
+  newPadding.bottomPadding = Math.min(newPadding.bottomPadding, node2.padding.bottomPadding);
+  
+  let newWidth = node1.width + node2.width;
+  let newHeight = node1.height + node2.height;
+  
+  if (direction === "flex-row") {
+    newWidth += getHorizontalSpacing(node1, node2);
+  }
+  if (direction == "flex-col") {
+    newHeight += getVerticalSpacing(node1, node2);
+  }
+  
+  const gap_xy = direction === "flex-row"? "x" : "y";
+  let html = `<div className="flex ${direction} gap-${gap_xy}-${getGapTwClassName(gapSize)}">`
+  html += children[0].html;
+  html += children[1].html;
+  html += `</div>`;
+  const newChildren: FrameSpaceInfo[] = [{
+    height: newHeight,
+    width: newWidth,
+    padding: newPadding,
+    html: html
+  }].concat(children.slice(2));
+  return mergeChildren([...newChildren], direction);
 }
 
 function groupLayout(children: FrameSpaceInfo[], direction:string) {
@@ -94,8 +142,10 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
     return s1.spacingInPx - s2.spacingInPx;
   }); // sort the sizes
 
-  let groupRanges = [];
+  console.log("my spacing sizes " , children, spacingSizes)
 
+  let groupRanges = [];
+  let previousRangeEnd = -1;
   for (const spacingSize of spacingSizes) {
     if (visitedSpacingIndexes.has(spacingSize.index)) continue;
     let previousSpacing = spacingSize.spacingInPx;
@@ -107,22 +157,22 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
         lst = i;
       } else {
         groupRanges.push({
-          l: spacingSize.index - 1, 
+          l: previousRangeEnd + 1,  // bug should start with 0, should not overlap
           r: lst,
           gapSize: spacingSize.spacingInPx,
         });
+        previousRangeEnd = lst;
         break;
       }
     }
   }
+
   // sort inc order by left index
   groupRanges.sort((r1, r2) => {
     return r1.l - r2.l;
   });
 
-  console.log("my group ranges", groupRanges);
-  
-  let newChildren = [];
+  let groupedChildren = [];
   for (const range of groupRanges) {
     const gap_xy = direction === "flex-row"? "x" : "y";
     let html = `<div className="flex ${direction} gap-${gap_xy}-${getGapTwClassName(range.gapSize)}">`
@@ -133,8 +183,8 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
     for (let i = range.l; i <= range.r; i++) {
       newPadding.leftPadding = Math.min(newPadding.leftPadding, children[i].padding.leftPadding);
       newPadding.topPadding = Math.min(newPadding.topPadding, children[i].padding.topPadding);
-      newPadding.rightPadding = Math.max(newPadding.rightPadding, children[i].padding.rightPadding);
-      newPadding.bottomPadding = Math.max(newPadding.bottomPadding, children[i].padding.bottomPadding);
+      newPadding.rightPadding = Math.min(newPadding.rightPadding, children[i].padding.rightPadding);
+      newPadding.bottomPadding = Math.min(newPadding.bottomPadding, children[i].padding.bottomPadding);
       
       newWidth += children[i].width;
       newHeight += children[i].height;
@@ -145,19 +195,18 @@ function groupLayout(children: FrameSpaceInfo[], direction:string) {
       if (i > range.l && direction == "flex-col") {
         newHeight += getVerticalSpacing(children[i-1], children[i]);
       }
-
       html += children[i].html;
     }
     html += "</div>"; // add closing bracket
-    newChildren.push({
+    groupedChildren.push({
       height: newHeight,
       width: newWidth,
       padding: newPadding,
       html: html,
     }); 
   }
-  console.log(newChildren);
-  return groupLayout([...newChildren], direction);
+
+  return mergeChildren(groupedChildren, direction);
 }
 
 async function serializeLayout(
