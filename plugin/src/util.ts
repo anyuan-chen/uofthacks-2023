@@ -1,3 +1,5 @@
+import { imports } from "./code";
+
 function RGBAToHSLA(r: number, g: number, b: number, a: number) {
   let cmin = Math.min(r, g, b),
     cmax = Math.max(r, g, b),
@@ -23,4 +25,28 @@ function RGBAToHSLA(r: number, g: number, b: number, a: number) {
   return "hsla(" + h + "," + s + "%," + l + "%," + a * 100 + "%)";
 }
 
-export default { RGBAToHSLA };
+export function getOverlayIDIfExists(node: FrameNode): string | null {
+  const react = node.reactions;
+  react.forEach((rxn) => {
+    rxn.trigger?.type == "ON_PRESS" || rxn.trigger?.type == "ON_CLICK";
+    rxn.actions?.forEach((action) => {
+      if (action.type === "NODE") {
+        return action.destinationId;
+      }
+    });
+  });
+  return null;
+}
+
+export function addUseStateToImports(
+  imports: string,
+  name: string,
+  type: number | string
+) {
+  if (!imports.includes(`import React from 'react'`)) {
+    imports = `import React from 'react' \n ${imports}`;
+  }
+  return `${imports} \n const [${name}, set${name}] = React.useState("")`;
+}
+
+export { RGBAToHSLA };

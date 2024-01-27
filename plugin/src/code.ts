@@ -1,7 +1,8 @@
 // This plugin will generate a sample codegen plugin
 // that appears in the Element tab of the Inspect panel.
 
-import getFormMap from "./formRecursionMapFormation";
+import getFormMap from "./formRecursionMapSummation";
+import { traverse } from "./traversal";
 import { RGBAToHSLA } from "./util";
 
 // This file holds the main code for plugins. Code in this file has access to
@@ -103,9 +104,8 @@ figma.codegen.on("generate", async (event: CodegenEvent) => {
   }
   figma.skipInvisibleInstanceChildren = true;
   const formMap = getFormMap(root);
-  //TODO write traverse code
-//   const program = await traverse();
-  const program = ""
+  const program = await traverse(root, "", "", formMap);
+
   console.log(await program);
 
   const result: CodegenResult[] = [

@@ -1,3 +1,5 @@
+/* NEEDS REWRITE NOT WORKING */
+
 import { getFrameInfo } from "./infoExtraction";
 import {
   BasicFrameType,

@@ -92,8 +92,10 @@ export function getTextInfo(node: TextNode): TextInfo {
       fontSizeLookup.set(size, true);
     }
   }
+  const id = node.id;
 
   return {
+    id,
     fontWeight: fontWeight,
     fontSize: fontSize,
     height: node.height,
@@ -122,7 +124,7 @@ export const distanceBetweenParentChild = (
     const msg = `child box with id ${frame.id} is null`;
     console.error(msg);
     throw msg;
-  }
+  }  
 
   const leftPadding = childBox.x - frameBox?.x;
   const rightPadding =
@@ -154,6 +156,7 @@ export function getFrameInfo(node: FrameNode): FrameInfo {
 
     if (child.type == "FRAME") {
       childrenPadding.push({
+        id: childNode.id,
         node: childNode,
         leftPadding: leftPadding,
         rightPadding: rightPadding,
@@ -163,6 +166,7 @@ export function getFrameInfo(node: FrameNode): FrameInfo {
     }
     if (child.type == "TEXT") {
       childrenPadding.push({
+        id: childNode.id,
         node: childNode,
         leftPadding: leftPadding,
         rightPadding: rightPadding,
@@ -171,8 +175,10 @@ export function getFrameInfo(node: FrameNode): FrameInfo {
       });
     }
   }
+  const id = node.id;
 
   return {
+    id,
     name: node.name,
     height: node.height,
     width: node.width,

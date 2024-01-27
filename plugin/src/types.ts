@@ -1,4 +1,5 @@
 export interface FrameInfo {
+  id: string;
   name: string;
   height: number;
   width: number;
@@ -8,13 +9,14 @@ export interface FrameInfo {
 }
 
 export interface FrameChild {
+  id: string;
   node: FrameInfo | TextInfo;
   leftPadding: number;
   rightPadding: number;
   topPadding: number;
   bottomPadding: number;
 }
-
+  
 export const TRANSPARENT_FILL = "hsla(0, 0%, 0%, 0)";
 
 export interface RelativeFontSizeRank {
@@ -23,6 +25,7 @@ export interface RelativeFontSizeRank {
 }
 
 export interface TextInfo {
+  id: string;
   fontWeight: number;
   fontSize: number;
   height: number;
