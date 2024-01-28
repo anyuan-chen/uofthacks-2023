@@ -39,7 +39,7 @@ figma.codegen.on("generate", async (event: CodegenEvent) => {
     return result;
   }
   figma.skipInvisibleInstanceChildren = true;
-  
+  console.log(getTestData(root));
 
   const formMap = getFormMap(root);
   const program = await traverse(root, null, "", "", formMap); // the code in string format
