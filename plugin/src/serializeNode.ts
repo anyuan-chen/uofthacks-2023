@@ -155,7 +155,7 @@ function groupLayout(node: FrameNode | TextNode, children: FrameSpaceInfo[], dir
     return s1.spacingInPx - s2.spacingInPx;
   }); // sort the sizes
 
-  // console.log("my spacing sizes " , children, direction, spacingSizes); // debug
+  console.log("my spacing sizes " , children, direction, spacingSizes); // debug
 
   let groupRanges = []; // stores {l, r} pairs, l representing left most index, and r representing right most
                         // ranges are inclusive
@@ -222,15 +222,21 @@ function groupLayout(node: FrameNode | TextNode, children: FrameSpaceInfo[], dir
     return r1.l - r2.l;
   });
 
-  // console.log("my group ranges", groupRanges);
+  console.log("my group ranges", groupRanges);
   // sanity check
+  let overlappingRanges = false;
   for (let i = 0; i < groupRanges.length - 1; i++) {
     if (groupRanges[i].r > groupRanges[i + 1].l) {
-      const msg = "ranges overlapping, cannot be happening";
-      console.error(msg);
-      throw msg;
+      overlappingRanges = true;
+      break;
     }
   } 
+  if (overlappingRanges) {
+    for (let i = 0; i < groupRanges.length; i++) {
+      groupRanges[i].l = i;
+      groupRanges[i].r = i;
+    }
+  }
 
   let groupedChildren = [];
   for (const range of groupRanges) {
@@ -457,7 +463,7 @@ async function serializeBasicFrame(
 async function classifyText(node: TextInfo): Promise<TextType> {
   const res: any = await classify(node);
   const prediction = res.classifications[0].prediction;
-  // console.log("predict res", res);
+  console.log("predict res", res);
   switch (prediction) {
     case "heading":
       return TextType.HEADING
