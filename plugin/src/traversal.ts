@@ -2,16 +2,26 @@
     traverse builds a tree of nodes and their types/props needed for final compilation
 */
 
+import { serializeNodeWithDialog } from "./dialogs";
 import { serializeBasicNode, serializeLayout } from "./serializeNode";
 import { BasicFrameType } from "./types";
+import { getOverlayIDIfExists } from "./util";
 
 async function traverse(
   base: FrameNode | TextNode,
+  parent: FrameNode | null,
   imports: string,
   hooks: string,
   formMap: Record<string, boolean>
 ): Promise<string> {
   //console.log(base.type, base.type === "FRAME" ? isBasicComponent(base) : "");
+
+  const overlayId = base.type === 'FRAME'? getOverlayIDIfExists(base) : null;
+
+  if (base.type === 'FRAME' && overlayId && parent?.id != overlayId) {
+    return await serializeNodeWithDialog(base, imports, hooks, formMap);
+  }
+
   if (base.type == "TEXT" || isBasicComponent(base)) {
     return await serializeBasicNode(base, imports, hooks, formMap);
   } else {

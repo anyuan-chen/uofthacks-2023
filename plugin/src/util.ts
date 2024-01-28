@@ -29,15 +29,43 @@ function RGBAToHSLA(r: number, g: number, b: number, a: number) {
 
 export function getOverlayIDIfExists(node: FrameNode): string | null {
   const react = node.reactions;
+  // console.log("[overlay]", node);
+  let destinationId = null;
   react.forEach((rxn) => {
     rxn.trigger?.type == "ON_PRESS" || rxn.trigger?.type == "ON_CLICK";
     rxn.actions?.forEach((action) => {
       if (action.type === "NODE") {
-        return action.destinationId;
+        destinationId = action.destinationId;
       }
     });
   });
-  return null;
+  return destinationId;
+}
+
+export function getTestData(node: FrameNode) {
+  const label = node.name;
+  let data = [];
+  let output = "";
+  for (const child of node.children) {
+    if (child && child.type === 'FRAME') {
+      
+      //console.log("went here"); // get the info
+      // console.log(info);
+      const testData = {
+        text: parseFrameInfoIntoEnglish(getFrameInfo(child)),
+        label: label
+      }
+      output += JSON.stringify(testData) + "\n";
+      // console.log(JSON.stringify(testData));
+    } else if (child && child.type == 'TEXT') {
+      const testData = {
+        text: parseTextInfoIntoEnglish(getTextInfo(child)),
+        label: label
+      }
+      output += JSON.stringify(testData) + "\n";
+    }
+  }
+  return output;
 }
 
 export function addUseStateToImports(
@@ -60,7 +88,7 @@ function parseTextInfoIntoEnglish(data: TextInfo) {
 export { parseTextInfoIntoEnglish };
 
 function parseFrameInfoIntoEnglish(data: FrameInfo): string {
-  let output = `The name of this frame is ${data.name}, the height of this frame is ${data.height}, the width of this frame is ${data.width}, the fill of this frame is ${data.fills}`;
+  let output = `The name of this frame is ${data.name}, the height of this frame is ${data.height}, the width of this frame is ${data.width}, the fill of this frame is ${data.fills} `;
   output += data.borderFill? `the frame has an outline. ` : "this frame does not have an outline. " 
   for (const child of data.childrenPadding) {
     if ("text" in child.node) {

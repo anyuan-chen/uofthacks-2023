@@ -221,7 +221,7 @@ function groupLayout(node: FrameNode | TextNode, children: FrameSpaceInfo[], dir
     return r1.l - r2.l;
   });
 
-  console.log("my group ranges", groupRanges);
+  // console.log("my group ranges", groupRanges);
   // sanity check
   for (let i = 0; i < groupRanges.length - 1; i++) {
     if (groupRanges[i].r > groupRanges[i + 1].l) {
@@ -317,7 +317,7 @@ async function serializeLayout(
   let childrenSpacing: FrameSpaceInfo[] = [];
 
   for (const child of children) {
-    const text = await traverse(child.node, imports, hooks, formMap);
+    const text = await traverse(child.node, node, imports, hooks, formMap);
     childrenSpacing.push({
       width: child.node.width,
       height: child.node.height,
@@ -333,7 +333,7 @@ async function serializeLayout(
 
   const childrenHTML = groupLayout(node, childrenSpacing, direction);
 
-  console.log("my children with parent node", node, childrenHTML);
+  // console.log("my children with parent node", node, childrenHTML);
 
   return `<div className="${className}"> ${childrenHTML} </div>`;
 }
@@ -354,7 +354,7 @@ async function serializeText(
     if (type === TextType.BODY) {
       return `<p className="${textClassName}">\${${node.name}}</p>`;
     } else if (type === TextType.HEADING) {
-      console.log("[info]", info.relativeFontSizeRank.rank);
+      // console.log("[info]", info.relativeFontSizeRank.rank);
       const headingRank = info.relativeFontSizeRank.rank + 1;
       return `<h${headingRank} className="${textClassName}">\${${node.name}}</h${headingRank}>`;
     }
@@ -363,7 +363,7 @@ async function serializeText(
   if (type === TextType.BODY) {
     return `<p className="${textClassName}">${info.text}</p>`;
   } else if (type === TextType.HEADING) {
-    console.log("[info]", info, info.relativeFontSizeRank.rank);
+    // console.log("[info]", info, info.relativeFontSizeRank.rank);
     const headingRank = info.relativeFontSizeRank.rank + 1;
     return `<h${headingRank} className="${textClassName}">${info.text}</h${headingRank}>`;
   }
@@ -406,11 +406,7 @@ async function serializeBasicFrame(
         node
       )}" className="${className}"/>`;
     }
-    return `<Input type="text" placeholder=${getFormTextPlaceholder(
-      node
-    )} className="${className}" onChange={(e) => {
-          set${node.name}(e.target.value);
-        }}/>`;
+    return `<Input type="text" placeholder="${getFormTextPlaceholder(node)}" className="${className}" />`;
   } else {
     const variant = getVariantForButton(type);
     const className = getBasicFrameClassname(info, type);
@@ -436,7 +432,7 @@ async function serializeBasicFrame(
 async function classifyText(node: TextInfo): Promise<TextType> {
   const res: any = await classify(node);
   const prediction = res.classifications[0].prediction;
-  console.log("predict res", res);
+  // console.log("predict res", res);
   switch (prediction) {
     case "heading":
       return TextType.HEADING
@@ -452,7 +448,7 @@ async function classifyText(node: TextInfo): Promise<TextType> {
 async function classifyFrame(node: FrameInfo): Promise<BasicFrameType> {
   const res: any = await classify(node);
   const prediction = res.classifications[0].prediction;
-  console.log("predict res", res);
+  // console.log("predict res", res);
   switch (prediction) {
     case "outline":
       return BasicFrameType.OUTLINE_BUTTON
