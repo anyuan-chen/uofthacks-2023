@@ -1,3 +1,4 @@
+import { base64ArrayBuffer } from "./base64";
 import {
   determineFlexDirection,
   getBasicFrameClassname,
@@ -383,6 +384,26 @@ function getFormTextPlaceholder(node: FrameNode): string {
   return returnedString;
 }
 
+async function getImageFill(node : FrameNode) : Promise<string | null>{
+  if (node.fills === figma.mixed){
+    return null;
+  }
+  for (const paint of node.fills){
+    if (paint.type === 'IMAGE'){
+      if (!paint.imageHash){
+        return null;
+      }
+      const image = figma.getImageByHash(paint.imageHash)
+      if (!image){
+        return null;
+      }
+      const bytes = await image.getBytesAsync()
+      return 'data:image/png;base64,' + base64ArrayBuffer(bytes);
+    }
+  }
+  return null;
+}
+
 async function serializeBasicFrame(
   node: FrameNode,
   imports: string,
@@ -391,6 +412,10 @@ async function serializeBasicFrame(
   const info = getFrameInfo(node);
   const type = await classifyFrame(info);
   const frameClassName = await getBasicFrameClassname(info, type);
+  const fill = await getImageFill(node);
+  if (fill !== null){
+    return `<img style={{width: "${node.width}px", height: "${node.height}px",  objectFit: "cover"}} src="${fill}"/>`
+  }
   /* make this into a map later if i have time */
   if (type === BasicFrameType.FORM_FIELD) {
     const className = getBasicFrameClassname(info, type);
