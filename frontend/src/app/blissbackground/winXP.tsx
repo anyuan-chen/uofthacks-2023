@@ -22,7 +22,7 @@ const XPLayout = ({ children, setTheme }: XPLayoutProps) => {
         border: "5px",
       }}
     >
-      <Rnd>
+      <Rnd default={{ x: 0, y: 0, width: 640, height: 600 }}>
         <div
           className="bg-[#EFEDDF]"
           style={{

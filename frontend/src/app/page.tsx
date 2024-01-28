@@ -1,53 +1,26 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { segoe } from "./layout";
 
 export default function Home() {
   return (
-    <div className="flex-col">
-      {" "}
-      <div className="flex flex-col gap-y-52">
-        <div className="flex flex-col gap-y-28">
-          <h1 className="text-7xl text-black font-bold">Your Info</h1>
-          <div className="flex flex-col gap-y-16">
-            <div className="flex-col">
-              {" "}
-              <div className="flex flex-col gap-y-5">
-                <p className="text-5xl text-gray-700 font-medium">First name</p>
-                <p className="text-4xl text-gray-700 font-normal">Andrew</p>
-              </div>{" "}
-            </div>
-            <div className="flex-col">
-              {" "}
-              <div className="flex flex-col gap-y-1.5">
-                <p className="text-5xl text-gray-700 font-medium">Last name:</p>
-                <p className="text-4xl text-gray-700 font-normal">Chen</p>
-              </div>{" "}
-            </div>
-            <div className="flex-col">
-              {" "}
-              <div className="flex flex-col gap-y-1.5">
-                <p className="text-5xl text-gray-700 font-medium">
-                  School name:
-                </p>
-                <p className="text-4xl text-gray-700 font-normal">
-                  Bayview SS.
-                </p>
-              </div>{" "}
-            </div>
-          </div>
-        </div>
-        <div className="flex-row">
-          {" "}
-          <div className="flex flex-row gap-x-16">
-            <Button variant="default" className="pt-10 pb-10">
-              Edit
-            </Button>
-            <Button variant="destructive" className="pt-10 pb-10">
-              Delete
-            </Button>
-          </div>{" "}
-        </div>
-      </div>{" "}
+    <div className="flex flex-col p-16 gap-8 h-full items-start">
+      <h1 className={"text-3xl"}>welcome to andrew and james' time capsule!</h1>
+      <div className={"flex flex-col gap-4 " + segoe.className}>
+        <p>
+          alternatively, this is also a demo of our figma to code plugin. every
+          component that's on this website has been generated with our plugin.
+          {"\n"}
+          to get started, download our <a href="">figma plugin</a>, and set it
+          up according to the instructions <a>we provide</a>.
+        </p>
+        <p>alternatively, to explore our journey, enter here:</p>
+      </div>
+      <a href="/journey">
+        <Button variant="default" className="pt-5 pb-5">
+          enter here!
+        </Button>
+      </a>
     </div>
   );
 }

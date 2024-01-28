@@ -1,32 +1,47 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import React from "react";
 
 const Page = () => {
   return (
-    <div className="flex-col py-40">
+    <div className="flex-col">
       {" "}
-      <p className="text-5xl text-gray-700 font-bold">Your Info</p>
-      <div className="flex-col justify-center gap0 py-11">
-        {" "}
-        <p className="text-2xl text-gray-700 font-medium">First name</p>
-        <p className="text-lg text-gray-700 font-normal">Andrew</p>{" "}
-      </div>
-      <div className="flex-col py-12">
-        {" "}
-        <p className="text-2xl text-gray-700 font-medium">Last name:</p>
-        <p className="text-lg text-gray-700 font-normal">Chen</p>{" "}
-      </div>
-      <div className="flex-col justify-start gap-3.5 py-1.5">
-        {" "}
-        <p className="text-2xl text-gray-700 font-medium">School name:</p>
-        <p className="text-lg text-gray-700 font-normal">Bayview SS.</p>{" "}
-      </div>
-      <div className="flex-row justify-start gap-14 px0">
-        {" "}
-        <Button variant="default">Edit</Button>
-        <Button variant="default">Delete</Button>{" "}
+      <div className="flex flex-col gap-y-24">
+        <div className="flex flex-col gap-y-5">
+          <div className="flex-col">
+            {" "}
+            <div className="flex flex-col gap-y-3">
+              <p className="text-lg text-gray-700 font-normal">First name</p>
+              <Input type="text" placeholder="eg. " className="" />
+            </div>{" "}
+          </div>
+          <div className="flex-col">
+            {" "}
+            <div className="flex flex-col gap-y-1">
+              <p className="text-lg text-gray-700 font-normal">Last name:</p>
+              <Input type="text" placeholder="Chen" className="" />
+            </div>{" "}
+          </div>
+          <div className="flex-col">
+            {" "}
+            <div className="flex flex-col gap-y-2">
+              <p className="text-lg text-gray-700 font-normal">School name:</p>
+              <Input type="text" placeholder="Chen" className="" />
+            </div>{" "}
+          </div>
+        </div>
+        <div className="flex-row">
+          {" "}
+          <div className="flex flex-row gap-x-5">
+            <Button variant="default" className="pt-5 pb-5">
+              Save
+            </Button>
+            <Button variant="destructive" className="pt-5 pb-5">
+              Cancel
+            </Button>
+          </div>{" "}
+        </div>
       </div>{" "}
-      
     </div>
   );
 };

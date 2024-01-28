@@ -4,7 +4,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { msSans } from "@/app/layout";
+import { inter, msSans } from "@/app/layout";
 import { ThemeContext, Themes } from "@/app/journey/layout";
 
 const buttonVariants = cva(
@@ -63,10 +63,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 ? "bg-[#BFBFBF] font-pixelated text-black border hover:border-[#F3C971] " +
                   msSans.className
                 : theme === Themes.win7
-                ? ""
-                : "",
+                ? "bg-[#BFBFBF] font-pixelated text-black border hover:border-[#F3C971]" +
+                  msSans.className
+                : "font-sans bg-primary text-primary-foreground hover:bg-primary/90" +
+                  inter.className,
             destructive:
-              "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+              theme === Themes.winXP
+                ? "bg-[#BFBFBF] font-pixelated text-black border hover:border-[#F3C971] " +
+                  msSans.className
+                : theme === Themes.win7
+                ? "bg-[#BFBFBF] font-pixelated text-black border hover:border-[#F3C971]" +
+                  msSans.className
+                : "bg-destructive text-destructive-foreground hover:bg-destructive/90" +
+                  inter.className,
+
             outline:
               "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
             secondary:
@@ -92,7 +102,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         style={theme === Themes.win7 ? win7Styles : {}}
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(addButtonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />

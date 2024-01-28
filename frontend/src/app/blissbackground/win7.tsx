@@ -24,7 +24,7 @@ const Win7Layout = ({ children, setTheme }: Win7LayoutProps) => {
         border: "5px",
       }}
     >
-      <Rnd>
+      <Rnd default={{ x: 0, y: 0, width: 640, height: 600 }}>
         <div
           style={{
             boxShadow: "2px 2px 10px 1px rgba(0,0,0,.7), inset 0 0 0 1px #fffa",
