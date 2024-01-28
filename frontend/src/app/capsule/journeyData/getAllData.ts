@@ -15,12 +15,11 @@ const data: JourneyData[] = [
     theme: Themes.winXP,
   },
 ];
-const GetAllData = () => {
+export const GetAllData = () => {
   return data;
 };
 
-const GetIndexData = (index: number) : JourneyData => {
+export const GetIndexData = (index: number) : JourneyData => {
   return data[index];
 };
 
-export default GetAllData;

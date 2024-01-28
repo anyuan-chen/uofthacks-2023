@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { JourneyData } from "./journeyData/getAllData";
 
 const Page = () => {
   const [index, setIndex] = useState(0);
-  const [data, setData] = useState<
+  const [data, setData] = useState<JourneyData>(null);
   return (
     <ThemeContext.Provider value={Themes.winXP}>
       <XPLayout setTheme={setTheme}>
