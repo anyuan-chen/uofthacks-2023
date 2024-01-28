@@ -9,7 +9,8 @@ export default function Home() {
       <div className={"flex flex-col gap-4 " + segoe.className}>
         <p>
           alternatively, this is also a demo of our figma to code plugin. every
-          component that's on this website has been generated with our plugin.
+          component that&apos;s on this website has been generated with our
+          plugin.
           {"\n"}
           to get started, download our <a href="">figma plugin</a>, and set it
           up according to the instructions <a>we provide</a>.
