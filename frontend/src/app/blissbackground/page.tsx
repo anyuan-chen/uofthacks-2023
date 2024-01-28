@@ -23,13 +23,10 @@ const Page = () => {
       </div>
       <div className="flex-row justify-start gap-14 px0">
         {" "}
-        <Button variant="default">
-          Edit
-        </Button>
-        <Button variant="default">
-          Delete
-        </Button>{" "}
+        <Button variant="default">Edit</Button>
+        <Button variant="default">Delete</Button>{" "}
       </div>{" "}
+      
     </div>
   );
 };
